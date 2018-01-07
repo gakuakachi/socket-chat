@@ -11,28 +11,34 @@ function scrollToBottom () {
   const scrollHeight = messages.prop('scrollHeight');
   const newMessageHeight = newMessage.innerHeight();
   const lastMessageHeight = newMessage.prev().innerHeight();
-  // console.group('scroll')
-  // console.log(clientHeight, 'clientHeight');
-  // console.log(scrollHeight, 'scrollHeight');
-  // console.log(scrollTop, 'scrollTop');
-  // console.log(newMessageHeight, 'newMessageHeight');
-  // console.log(lastMessageHeight, 'lastMessageHeight');
-  // console.log(clientHeight + scrollTop + newMessageHeight + lastMessageHeight, 'total');
-  // console.log(clientHeight + scrollTop + newMessageHeight + lastMessageHeight >= scrollHeight, 'bool');
-  // console.groupEnd('');
   if(clientHeight + scrollTop + newMessageHeight + lastMessageHeight >= scrollHeight) {
-    console.log('yay')
     messages.scrollTop(scrollHeight);
   }
 }
 
 socket.on('connect', function() {
-  console.log('connected to server')
+  var params = $.deparam(window.location.search);
+  socket.emit('join', params, function(err) {
+    if(err) {
+      alert(err);
+      window.location.href = '/';
+    }
+  });
 });
 
 socket.on('disconnect', function() {
   console.log('Disconnected from server');
 });
+
+socket.on('updateUserList', function(users) {
+  console.log(users);
+  var ol = $('<ol></ol>');
+  users.forEach(function(user) {
+    ol.append($('<li></li>').text(user));
+  });
+
+  $('#users').html(ol);
+})
 
 socket.on('newMessage', function(message) {
   var formattedTime = moment(message.createdAt).format('h:mm a');
@@ -51,7 +57,6 @@ var messageTextbox = $('[name=message]');
 $('#message-form').on('submit', function(e) {
   e.preventDefault();
   socket.emit('createMessage', {
-    from: 'User',
     text: messageTextbox.val()
   }, function callback(data) {
     messageTextbox.val('');
